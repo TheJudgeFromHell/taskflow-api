@@ -8,9 +8,32 @@ use Illuminate\Support\Facades\Auth;
 
 class TaskController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $tasks = Auth::user()->tasks()->orderBy('due_date')->paginate(10);
+        $query = Auth::user()->tasks();
+        
+        // Фильтр по статусу (выполнено/не выполнено)
+        if ($request->has('completed') && $request->completed !== '') {
+            $query->where('is_completed', $request->completed);
+        }
+        
+        // Фильтр по приоритету
+        if ($request->has('priority') && $request->priority !== '') {
+            $query->where('priority', $request->priority);
+        }
+        
+        // Сортировка
+        $sortBy = $request->get('sort_by', 'due_date');
+        $sortOrder = $request->get('sort_order', 'asc');
+        
+        if (in_array($sortBy, ['due_date', 'created_at', 'priority', 'title'])) {
+            $query->orderBy($sortBy, $sortOrder);
+        } else {
+            $query->orderBy('due_date', 'asc');
+        }
+        
+        $tasks = $query->paginate(10);
+        
         return $tasks;
     }
 

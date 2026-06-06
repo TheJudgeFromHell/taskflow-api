@@ -96,6 +96,7 @@ POST /api/register
     "email": "ivan@example.com",
     "password": "123456"
 }
+```
 
 ### Создание задачи
 
@@ -108,7 +109,34 @@ Authorization: Bearer токен_пользователя
     "priority": "high"
 }
 
+
 ### Список задач
 
 GET /api/tasks
 Authorization: Bearer токен_пользователя
+
+Установка и запуск
+1. Клонировать репозиторий
+bash
+git clone https://github.com/TheJudgeFromHell/taskflow-api.git
+cd taskflow-api
+2. Установить зависимости
+bash
+composer install
+3. Настроить окружение
+bash
+cp .env.example .env
+Отредактируйте .env — укажите данные для подключения к базе данных.
+
+4. Сгенерировать ключ приложения
+bash
+php artisan key:generate
+5. Выполнить миграции
+bash
+php artisan migrate
+6. Запустить сервер
+bash
+php artisan serve
+7. Открыть фронтенд
+text
+http://127.0.0.1:8000/frontend/index.html
