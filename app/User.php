@@ -16,7 +16,7 @@ class User extends Authenticatable
      * @var array
      */
     protected $fillable = [
-        'name', 'email', 'password',
+        'name', 'email', 'password', 'api_token',
     ];
 
     /**
@@ -36,4 +36,12 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
     ];
+
+    /**
+     * Get the tasks for the user.
+     */
+    public function tasks()
+    {
+        return $this->hasMany(Task::class);
+    }
 }
