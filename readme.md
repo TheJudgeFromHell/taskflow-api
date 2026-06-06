@@ -100,6 +100,7 @@ POST /api/register
 
 ### Создание задачи
 
+```json
 POST /api/tasks
 Authorization: Bearer токен_пользователя
 {
@@ -107,17 +108,21 @@ Authorization: Bearer токен_пользователя
     "due_date": "2026-06-15",
     "priority": "high"
 }
-
+```
 
 ### Список задач
 
+```json
 GET /api/tasks
 Authorization: Bearer токен_пользователя
+```
 
 ## Установка и запуск
 1. Клонировать репозиторий
+```json
 git clone https://github.com/TheJudgeFromHell/taskflow-api.git
 cd taskflow-api
+```
 
 2. Установить зависимости
 composer install
