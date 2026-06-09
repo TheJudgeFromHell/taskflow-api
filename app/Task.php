@@ -15,11 +15,32 @@ class Task extends Model
 
     protected $casts = [
         'due_date' => 'date',
+        'reminder_at' => 'datetime',
         'is_completed' => 'boolean',
     ];
 
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function comments()
+    {
+        return $this->hasMany(Comment::class);
+    }
+
+    public function likes()
+    {
+        return $this->hasMany(Like::class);
+    }
+
+    public function getLikesCountAttribute()
+    {
+        return $this->likes()->where('type', 'like')->count();
+    }
+
+    public function getDislikesCountAttribute()
+    {
+        return $this->likes()->where('type', 'dislike')->count();
     }
 }
