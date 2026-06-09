@@ -141,4 +141,7 @@ php artisan migrate
 php artisan serve
 
 7. Открыть фронтенд
+develop
 http://127.0.0.1:8000/frontend/index.html
+http://127.0.0.1:8000/frontend/index.html
+main
