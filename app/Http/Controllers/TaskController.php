@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Task;
+use App\Comment;
+use App\Like;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -76,5 +78,72 @@ class TaskController extends Controller
 
         $task->delete();
         return response()->json(['message' => 'Task deleted']);
+    }
+
+    // Добавить комментарий к задаче
+    public function addComment(Request $request, $id)
+    {
+        $task = Task::findOrFail($id);
+        
+        // Проверяем, что задача принадлежит пользователю
+        if ($task->user_id !== Auth::id()) {
+            return response()->json(['message' => 'Forbidden'], 403);
+        }
+        
+        $request->validate([
+            'content' => 'required|string|min:1'
+        ]);
+        
+        $comment = Comment::create([
+            'task_id' => $task->id,
+            'user_id' => Auth::id(),
+            'content' => $request->content
+        ]);
+        
+        return response()->json($comment, 201);
+    }
+
+    // Получить комментарии к задаче
+    public function getComments($id)
+    {
+        $task = Task::findOrFail($id);
+        
+        if ($task->user_id !== Auth::id()) {
+            return response()->json(['message' => 'Forbidden'], 403);
+        }
+        
+        $comments = $task->comments()->with('user')->orderBy('created_at', 'desc')->get();
+        
+        return response()->json($comments);
+    }
+
+    // Добавить лайк/дизлайк к задаче
+    public function rateTask(Request $request, $id)
+    {
+        $task = Task::findOrFail($id);
+        
+        $request->validate([
+            'type' => 'required|in:like,dislike'
+        ]);
+        
+        // Проверяем, не оценил ли пользователь уже эту задачу
+        $existingLike = Like::where('task_id', $task->id)
+                            ->where('user_id', Auth::id())
+                            ->first();
+        
+        if ($existingLike) {
+            // Если уже оценил, обновляем оценку
+            $existingLike->update(['type' => $request->type]);
+            return response()->json(['message' => 'Rating updated', 'like' => $existingLike]);
+        }
+        
+        // Иначе создаём новую оценку
+        $like = Like::create([
+            'task_id' => $task->id,
+            'user_id' => Auth::id(),
+            'type' => $request->type
+        ]);
+        
+        return response()->json($like, 201);
     }
 }

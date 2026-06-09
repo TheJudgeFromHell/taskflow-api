@@ -20,7 +20,6 @@
             max-width: 1200px;
             margin: 0 auto;
         }
-        /* Карточки */
         .card {
             background: white;
             border-radius: 15px;
@@ -34,7 +33,6 @@
             border-bottom: 2px solid #667eea;
             padding-bottom: 10px;
         }
-        /* Формы */
         .form-group {
             margin-bottom: 15px;
         }
@@ -76,7 +74,10 @@
         .btn-warning {
             background: #ed8936;
         }
-        /* Таблица задач */
+        .btn-sm {
+            padding: 5px 10px;
+            font-size: 12px;
+        }
         .tasks-table {
             width: 100%;
             border-collapse: collapse;
@@ -89,9 +90,6 @@
         .tasks-table th {
             background: #f7f7f7;
             color: #555;
-        }
-        .tasks-table tr:hover {
-            background: #f9f9f9;
         }
         .priority-low {
             color: #48bb78;
@@ -109,7 +107,6 @@
             text-decoration: line-through;
             opacity: 0.7;
         }
-        /* Две колонки */
         .two-columns {
             display: grid;
             grid-template-columns: 1fr 2fr;
@@ -117,12 +114,6 @@
         }
         .hidden {
             display: none;
-        }
-        .auth-buttons {
-            display: flex;
-            gap: 10px;
-            justify-content: flex-end;
-            margin-bottom: 20px;
         }
         .user-info {
             background: white;
@@ -148,7 +139,6 @@
             padding: 5px 10px;
             font-size: 12px;
         }
-        /* Стили для фильтров */
         .filters-bar {
             margin-bottom: 20px;
             padding: 15px;
@@ -169,25 +159,40 @@
             font-size: 12px;
             margin-bottom: 3px;
         }
-        .filter-group select, .filter-group input {
+        .comments-section {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f9f9f9;
+            border-radius: 8px;
+        }
+        .comment {
             padding: 8px;
+            border-bottom: 1px solid #eee;
+        }
+        .comment-author {
+            font-weight: bold;
+            color: #667eea;
+        }
+        .comment-date {
+            font-size: 11px;
+            color: #999;
+        }
+        .like-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 0 5px;
+            padding: 0;
+        }
+        .likes-count {
             font-size: 13px;
-        }
-        .btn-filter {
-            background: #667eea;
-            padding: 8px 20px;
-            margin-top: 22px;
-        }
-        .btn-reset {
-            background: #718096;
-            padding: 8px 20px;
-            margin-top: 22px;
+            margin-left: 5px;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <!-- Шапка с информацией о пользователе -->
         <div id="authPanel" class="hidden">
             <div class="user-info">
                 <div>
@@ -198,7 +203,6 @@
             </div>
         </div>
 
-        <!-- Формы регистрации и входа -->
         <div id="unauthPanel">
             <div class="two-columns">
                 <div class="card">
@@ -232,10 +236,8 @@
             </div>
         </div>
 
-        <!-- Управление задачами (видно только после входа) -->
         <div id="tasksPanel" class="hidden">
             <div class="two-columns">
-                <!-- Форма создания задачи -->
                 <div class="card">
                     <h2>➕ Создать задачу</h2>
                     <div class="form-group">
@@ -258,14 +260,16 @@
                             <option value="high">🔴 Высокий</option>
                         </select>
                     </div>
+                    <div class="form-group">
+                        <label>Напоминание (дата и время)</label>
+                        <input type="datetime-local" id="taskReminder">
+                    </div>
                     <button onclick="createTask()">Создать задачу</button>
                 </div>
 
-                <!-- Список задач -->
                 <div class="card">
                     <h2>📋 Мои задачи</h2>
                     
-                    <!-- Панель фильтров -->
                     <div class="filters-bar">
                         <div class="filters-row">
                             <div class="filter-group">
@@ -315,7 +319,6 @@
         </div>
     </div>
 
-    <!-- Модальное окно для редактирования -->
     <div id="editModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000;">
         <div style="background:white; max-width:500px; margin:50px auto; padding:25px; border-radius:15px;">
             <h2>✏️ Редактировать задачу</h2>
@@ -350,15 +353,26 @@
         </div>
     </div>
 
+    <div id="commentsModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000;">
+        <div style="background:white; max-width:600px; margin:50px auto; padding:25px; border-radius:15px;">
+            <h2>💬 Комментарии</h2>
+            <input type="hidden" id="commentsTaskId">
+            <div id="commentsList" style="max-height:300px; overflow-y:auto; margin-bottom:15px;"></div>
+            <div class="form-group">
+                <textarea id="newComment" rows="2" placeholder="Написать комментарий..."></textarea>
+            </div>
+            <button onclick="addComment()">Добавить комментарий</button>
+            <button onclick="closeCommentsModal()" class="btn-danger">Закрыть</button>
+        </div>
+    </div>
+
     <script>
         let currentToken = null;
         let currentUser = null;
         let currentPage = 1;
 
-        // Базовый URL API
         const API_URL = 'http://127.0.0.1:8000/api';
 
-        // Регистрация
         async function register() {
             const name = document.getElementById('regName').value;
             const email = document.getElementById('regEmail').value;
@@ -366,11 +380,6 @@
 
             if (!name || !email || !password) {
                 alert('Заполните все поля');
-                return;
-            }
-
-            if (password.length < 6) {
-                alert('Пароль должен быть не менее 6 символов');
                 return;
             }
 
@@ -394,7 +403,6 @@
             }
         }
 
-        // Логин
         async function login() {
             const email = document.getElementById('loginEmail').value;
             const password = document.getElementById('loginPassword').value;
@@ -426,7 +434,6 @@
             }
         }
 
-        // Выход
         async function logout() {
             if (currentToken) {
                 try {
@@ -446,7 +453,6 @@
             showAuthPanel();
         }
 
-        // Показать панель после входа
         function showTasksPanel() {
             document.getElementById('unauthPanel').classList.add('hidden');
             document.getElementById('tasksPanel').classList.remove('hidden');
@@ -455,7 +461,6 @@
             document.getElementById('userToken').textContent = currentToken.substring(0, 30) + '...';
         }
 
-        // Показать панель входа/регистрации
         function showAuthPanel() {
             document.getElementById('unauthPanel').classList.remove('hidden');
             document.getElementById('tasksPanel').classList.add('hidden');
@@ -464,33 +469,26 @@
             document.getElementById('loginPassword').value = '';
         }
 
-        // Получить параметры фильтров
         function getFilterParams() {
             const completed = document.getElementById('filterCompleted').value;
             const priority = document.getElementById('filterPriority').value;
             const sortBy = document.getElementById('filterSortBy').value;
             const sortOrder = document.getElementById('filterSortOrder').value;
-            
             return { completed, priority, sortBy, sortOrder };
         }
 
-        // Построить URL с фильтрами
         function buildFilterUrl(page = 1) {
             const { completed, priority, sortBy, sortOrder } = getFilterParams();
             let url = `${API_URL}/tasks?page=${page}`;
-            
             if (completed !== '') url += `&completed=${completed}`;
             if (priority !== '') url += `&priority=${priority}`;
             if (sortBy) url += `&sort_by=${sortBy}&sort_order=${sortOrder}`;
-            
             return url;
         }
 
-        // Загрузить задачи с фильтрами
         async function loadTasksWithFilters(page = 1) {
             if (!currentToken) return;
             currentPage = page;
-            
             try {
                 const url = buildFilterUrl(page);
                 const response = await fetch(url, {
@@ -499,16 +497,15 @@
                 const data = await response.json();
                 if (response.ok) {
                     renderTasks(data.data);
-                    renderPagination(data, loadTasksWithFilters);
+                    renderPagination(data);
                 } else {
-                    alert('Ошибка загрузки задач: ' + JSON.stringify(data));
+                    alert('Ошибка загрузки задач');
                 }
             } catch (error) {
                 alert('Ошибка соединения: ' + error);
             }
         }
 
-        // Сбросить фильтры
         function resetFilters() {
             document.getElementById('filterCompleted').value = '';
             document.getElementById('filterPriority').value = '';
@@ -517,7 +514,142 @@
             loadTasksWithFilters();
         }
 
-        // Отобразить задачи
+        // Функция создания задачи (исправлена)
+        async function createTask() {
+            const title = document.getElementById('taskTitle').value;
+            const description = document.getElementById('taskDesc').value;
+            const due_date = document.getElementById('taskDueDate').value;
+            const priority = document.getElementById('taskPriority').value;
+            const reminder_at = document.getElementById('taskReminder').value;
+
+            if (!title) {
+                alert('Введите название задачи');
+                return;
+            }
+
+            // Подготовка данных для отправки
+            const taskData = {
+                title: title,
+                description: description,
+                due_date: due_date,
+                priority: priority
+            };
+
+            // Добавляем reminder_at, только если оно заполнено
+            if (reminder_at) {
+                taskData.reminder_at = reminder_at;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/tasks`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${currentToken}`
+                    },
+                    body: JSON.stringify(taskData)
+                });
+                
+                if (response.ok) {
+                    document.getElementById('taskTitle').value = '';
+                    document.getElementById('taskDesc').value = '';
+                    document.getElementById('taskDueDate').value = '';
+                    document.getElementById('taskReminder').value = '';
+                    loadTasksWithFilters(currentPage);
+                    alert('Задача создана успешно!');
+                } else {
+                    const error = await response.json();
+                    alert('Ошибка: ' + JSON.stringify(error));
+                }
+            } catch (error) {
+                alert('Ошибка: ' + error);
+            }
+        }
+
+        // Лайк/дизлайк
+        async function rateTask(taskId, type) {
+            try {
+                const response = await fetch(`${API_URL}/tasks/${taskId}/rate`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${currentToken}`
+                    },
+                    body: JSON.stringify({ type })
+                });
+                if (response.ok) {
+                    loadTasksWithFilters(currentPage);
+                }
+            } catch (error) {
+                alert('Ошибка: ' + error);
+            }
+        }
+
+        // Комментарии
+        async function openComments(taskId) {
+            document.getElementById('commentsTaskId').value = taskId;
+            document.getElementById('commentsModal').style.display = 'block';
+            await loadComments(taskId);
+        }
+
+        async function loadComments(taskId) {
+            try {
+                const response = await fetch(`${API_URL}/tasks/${taskId}/comments`, {
+                    headers: { 'Authorization': `Bearer ${currentToken}` }
+                });
+                const comments = await response.json();
+                const container = document.getElementById('commentsList');
+                if (!comments || comments.length === 0) {
+                    container.innerHTML = '<p>Нет комментариев. Будьте первым!</p>';
+                    return;
+                }
+                let html = '';
+                comments.forEach(comment => {
+                    html += `<div class="comment">
+                        <span class="comment-author">${escapeHtml(comment.user.name)}</span>
+                        <span class="comment-date"> ${new Date(comment.created_at).toLocaleString()}</span>
+                        <p>${escapeHtml(comment.content)}</p>
+                    </div>`;
+                });
+                container.innerHTML = html;
+            } catch (error) {
+                alert('Ошибка загрузки комментариев');
+            }
+        }
+
+        async function addComment() {
+            const taskId = document.getElementById('commentsTaskId').value;
+            const content = document.getElementById('newComment').value;
+            if (!content) {
+                alert('Введите комментарий');
+                return;
+            }
+            try {
+                const response = await fetch(`${API_URL}/tasks/${taskId}/comments`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${currentToken}`
+                    },
+                    body: JSON.stringify({ content })
+                });
+                if (response.ok) {
+                    document.getElementById('newComment').value = '';
+                    await loadComments(taskId);
+                } else {
+                    alert('Ошибка добавления комментария');
+                }
+            } catch (error) {
+                alert('Ошибка: ' + error);
+            }
+        }
+
+        function closeCommentsModal() {
+            document.getElementById('commentsModal').style.display = 'none';
+            document.getElementById('commentsList').innerHTML = '';
+            document.getElementById('newComment').value = '';
+        }
+
         function renderTasks(tasks) {
             const container = document.getElementById('tasksList');
             if (!tasks || tasks.length === 0) {
@@ -541,9 +673,14 @@
                 html += `<td>${task.due_date || '—'}</td>`;
                 html += `<td>${statusText}</td>`;
                 html += `<td>
-                            <button onclick="toggleComplete(${task.id}, ${!task.is_completed})" class="btn-success" style="margin-right:5px;">${task.is_completed ? '↩️ Вернуть' : '✅ Выполнить'}</button>
-                            <button onclick="openEditModal(${task.id})" class="btn-warning" style="margin-right:5px;">✏️</button>
-                            <button onclick="deleteTask(${task.id})" class="btn-danger">🗑️</button>
+                            <button onclick="toggleComplete(${task.id}, ${!task.is_completed})" class="btn-success btn-sm">${task.is_completed ? '↩️' : '✅'}</button>
+                            <button onclick="openEditModal(${task.id})" class="btn-warning btn-sm">✏️</button>
+                            <button onclick="deleteTask(${task.id})" class="btn-danger btn-sm">🗑️</button>
+                            <button onclick="openComments(${task.id})" class="btn-sm">💬</button>
+                            <button onclick="rateTask(${task.id}, 'like')" class="like-btn">👍</button>
+                            <span class="likes-count">${task.likes_count || 0}</span>
+                            <button onclick="rateTask(${task.id}, 'dislike')" class="like-btn">👎</button>
+                            <span class="likes-count">${task.dislikes_count || 0}</span>
                           </td>`;
                 html += `</tr>`;
             });
@@ -551,8 +688,7 @@
             container.innerHTML = html;
         }
 
-        // Пагинация
-        function renderPagination(data, loadFunction) {
+        function renderPagination(data) {
             const container = document.getElementById('pagination');
             if (!data || data.last_page <= 1) {
                 container.innerHTML = '';
@@ -563,48 +699,12 @@
                 if (i === data.current_page) {
                     html += `<button disabled style="background:#ccc;">${i}</button>`;
                 } else {
-                    html += `<button onclick="loadFunction(${i})">${i}</button>`;
+                    html += `<button onclick="loadTasksWithFilters(${i})">${i}</button>`;
                 }
             }
             container.innerHTML = html;
         }
 
-        // Создать задачу
-        async function createTask() {
-            const title = document.getElementById('taskTitle').value;
-            const description = document.getElementById('taskDesc').value;
-            const due_date = document.getElementById('taskDueDate').value;
-            const priority = document.getElementById('taskPriority').value;
-
-            if (!title) {
-                alert('Введите название задачи');
-                return;
-            }
-
-            try {
-                const response = await fetch(`${API_URL}/tasks`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${currentToken}`
-                    },
-                    body: JSON.stringify({ title, description, due_date, priority })
-                });
-                if (response.ok) {
-                    document.getElementById('taskTitle').value = '';
-                    document.getElementById('taskDesc').value = '';
-                    document.getElementById('taskDueDate').value = '';
-                    loadTasksWithFilters(currentPage);
-                } else {
-                    const error = await response.json();
-                    alert('Ошибка: ' + JSON.stringify(error));
-                }
-            } catch (error) {
-                alert('Ошибка: ' + error);
-            }
-        }
-
-        // Открыть модальное окно редактирования
         async function openEditModal(taskId) {
             try {
                 const response = await fetch(`${API_URL}/tasks/${taskId}`, {
@@ -625,7 +725,6 @@
             }
         }
 
-        // Обновить задачу
         async function updateTask() {
             const taskId = document.getElementById('editTaskId').value;
             const title = document.getElementById('editTitle').value;
@@ -654,7 +753,6 @@
             }
         }
 
-        // Переключить статус задачи
         async function toggleComplete(taskId, completed) {
             try {
                 const response = await fetch(`${API_URL}/tasks/${taskId}`, {
@@ -673,7 +771,6 @@
             }
         }
 
-        // Удалить задачу
         async function deleteTask(taskId) {
             if (!confirm('Вы уверены, что хотите удалить задачу?')) return;
             try {
@@ -703,7 +800,6 @@
             });
         }
 
-        // Проверить сохранённый токен при загрузке
         const savedToken = localStorage.getItem('token');
         const savedUser = localStorage.getItem('user');
         if (savedToken && savedUser) {
